@@ -125,7 +125,7 @@ public partial class ByteBuffer : IList<byte>
 
 	public byte ByteAt(int index)
 	{
-		if (index < 0 || index >= blocks.Count)
+		if (index < 0 || index >= Count)
 		{
 			throw new IndexOutOfRangeException(nameof(ByteAt));
 		}
