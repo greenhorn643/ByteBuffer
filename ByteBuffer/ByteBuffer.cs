@@ -7,10 +7,6 @@ public partial class ByteBuffer : IList<byte>
 	private byte[]? frontBlock = null;
 	public int Count { get; private set; } = 0;
 
-	public bool IsReadOnly => throw new NotImplementedException();
-
-	byte IList<byte>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
 	public void AddRange(ReadOnlyMemory<byte> bytes)
 	{
 		ReadOnlySpan<byte> bytesToWrite = bytes.Span;

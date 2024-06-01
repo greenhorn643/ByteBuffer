@@ -4,6 +4,10 @@ namespace ByteBuffer;
 
 public partial class ByteBuffer
 {
+	public bool IsReadOnly => false;
+
+	byte IList<byte>.this[int index] { get => ByteAt(index); set => throw new NotSupportedException("ByteBuffer.set_Index"); }
+
 	public int IndexOf(byte item)
 	{
 		for (int i = 0; i < Count; i++)
