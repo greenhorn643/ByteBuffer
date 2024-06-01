@@ -73,6 +73,12 @@ internal static class ByteBlock
 		SetBlockStart(block, blockStart + bytes.Length);
 	}
 
+	public static void Read(byte[] block, Span<byte> bytes)
+	{
+		int blockStart = GetBlockStart(block);
+		block.AsSpan().Slice(blockStart, bytes.Length).CopyTo(bytes);
+	}
+
 	public static void Reset(byte[] block)
 	{
 		SetBlockStart(block, 4);

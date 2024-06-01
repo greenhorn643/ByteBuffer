@@ -1,11 +1,15 @@
 ﻿namespace ByteBuffer;
 
-public class ByteBuffer
+public partial class ByteBuffer : IList<byte>
 {
 	private readonly Queue<byte[]> blocks = [];
 	private byte[] backBlock = ByteBlock.NewBlock();
 	private byte[]? frontBlock = null;
 	public int Count { get; private set; } = 0;
+
+	public bool IsReadOnly => throw new NotImplementedException();
+
+	byte IList<byte>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
 	public void AddRange(ReadOnlyMemory<byte> bytes)
 	{
@@ -29,6 +33,57 @@ public class ByteBuffer
 		}
 
 		Count += bytes.Length;
+	}
+
+	public int PeekRange(Memory<byte> memory)
+	{
+		int totalRead = 0;
+		Span<byte> bytesToRead = memory.Span;
+
+		if (frontBlock != null)
+		{
+			int frontBlockLength = ByteBlock.GetDataLength(frontBlock);
+
+			if (frontBlockLength >= bytesToRead.Length)
+			{
+				ByteBlock.Read(frontBlock, bytesToRead);
+				totalRead += bytesToRead.Length;
+				return totalRead;
+			}
+
+			ByteBlock.Read(frontBlock, bytesToRead[..frontBlockLength]);
+			bytesToRead = bytesToRead[frontBlockLength..];
+			totalRead += frontBlockLength;
+		}
+
+		foreach (var block in blocks)
+		{
+			int blockLength = ByteBlock.GetDataLength(block);
+
+			if (blockLength >= bytesToRead.Length)
+			{
+				ByteBlock.Read(block, bytesToRead);
+				totalRead += bytesToRead.Length;
+				return totalRead;
+			}
+
+			ByteBlock.Read(block, bytesToRead[..blockLength]);
+			bytesToRead = bytesToRead[blockLength..];
+			totalRead += blockLength;
+		}
+
+		int backBlockLength = ByteBlock.GetDataLength(backBlock);
+
+		if (backBlockLength >= bytesToRead.Length)
+		{
+			ByteBlock.Read(backBlock, bytesToRead);
+			totalRead += bytesToRead.Length;
+			return totalRead;
+		}
+
+		ByteBlock.Read(backBlock, bytesToRead[..backBlockLength]);
+		totalRead += backBlockLength;
+		return totalRead;
 	}
 
 	public int PopRange(Memory<byte> memory)
