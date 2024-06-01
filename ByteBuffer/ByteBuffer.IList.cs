@@ -56,7 +56,7 @@ public partial class ByteBuffer
 			throw new ArgumentException($"{nameof(CopyTo)} {nameof(array)} is too small to hold contents of {nameof(ByteBuffer)}");
 		}
 
-		PeekRange(array.AsMemory()[arrayIndex..]);
+		PeekRange(array.AsSpan()[arrayIndex..]);
 	}
 
 	public bool Remove(byte item)

@@ -9,9 +9,9 @@ public partial class ByteBuffer : IList<byte>, IBufferWriter<byte>
 	private byte[]? frontBlock = null;
 	public int Count { get; private set; } = 0;
 
-	public void AddRange(ReadOnlyMemory<byte> bytes)
+	public void AddRange(ReadOnlySpan<byte> bytes)
 	{
-		ReadOnlySpan<byte> bytesToWrite = bytes.Span;
+		ReadOnlySpan<byte> bytesToWrite = bytes[..];
 
 		while (bytesToWrite.Length > 0)
 		{
@@ -33,61 +33,45 @@ public partial class ByteBuffer : IList<byte>, IBufferWriter<byte>
 		Count += bytes.Length;
 	}
 
-	public int PeekRange(Memory<byte> memory)
+	public int PeekRange(Span<byte> span, int start = 0)
 	{
 		int totalRead = 0;
-		Span<byte> bytesToRead = memory.Span;
+		Span<byte> bytesToRead = span[..];
 
-		if (frontBlock != null)
-		{
-			int frontBlockLength = ByteBlock.GetDataLength(frontBlock);
+		IEnumerable<byte[]> allBlocks = frontBlock == null
+			? [.. blocks, backBlock]
+			: [frontBlock, .. blocks, backBlock];
 
-			if (frontBlockLength >= bytesToRead.Length)
-			{
-				ByteBlock.Read(frontBlock, bytesToRead);
-				totalRead += bytesToRead.Length;
-				return totalRead;
-			}
-
-			ByteBlock.Read(frontBlock, bytesToRead[..frontBlockLength]);
-			bytesToRead = bytesToRead[frontBlockLength..];
-			totalRead += frontBlockLength;
-		}
-
-		foreach (var block in blocks)
+		foreach (var block in allBlocks)
 		{
 			int blockLength = ByteBlock.GetDataLength(block);
 
-			if (blockLength >= bytesToRead.Length)
+			if (blockLength >= bytesToRead.Length + start)
 			{
-				ByteBlock.Read(block, bytesToRead);
+				ByteBlock.Read(block, bytesToRead, start);
 				totalRead += bytesToRead.Length;
-				return totalRead;
+				break;
 			}
-
-			ByteBlock.Read(block, bytesToRead[..blockLength]);
-			bytesToRead = bytesToRead[blockLength..];
-			totalRead += blockLength;
+			else if (blockLength > start)
+			{
+				ByteBlock.Read(block, bytesToRead[..(blockLength - start)], start);
+				bytesToRead = bytesToRead[(blockLength - start)..];
+				totalRead += blockLength - start;
+				start = 0;
+			}
+			else
+			{
+				start -= blockLength;
+			}
 		}
 
-		int backBlockLength = ByteBlock.GetDataLength(backBlock);
-
-		if (backBlockLength >= bytesToRead.Length)
-		{
-			ByteBlock.Read(backBlock, bytesToRead);
-			totalRead += bytesToRead.Length;
-			return totalRead;
-		}
-
-		ByteBlock.Read(backBlock, bytesToRead[..backBlockLength]);
-		totalRead += backBlockLength;
 		return totalRead;
 	}
 
-	public int PopRange(Memory<byte> memory)
+	public int PopRange(Span<byte> bytes)
 	{
 		int totalRead = 0;
-		Span<byte> bytesToRead = memory.Span;
+		Span<byte> bytesToRead = bytes[..];
 
 		while (bytesToRead.Length > 0)
 		{
@@ -154,6 +138,41 @@ public partial class ByteBuffer : IList<byte>, IBufferWriter<byte>
 		}
 
 		return ByteBlock.GetByteAtUnchecked(backBlock, index);
+	}
+
+	public int ReplaceRange(ReadOnlySpan<byte> replacement, int start)
+	{
+		int totalResplaced = 0;
+		ReadOnlySpan<byte> bytesToReplace = replacement[..];
+
+		IEnumerable<byte[]> allBlocks = frontBlock == null
+			? [.. blocks, backBlock]
+			: [frontBlock, .. blocks, backBlock];
+
+		foreach (var block in allBlocks)
+		{
+			int blockLength = ByteBlock.GetDataLength(block);
+
+			if (blockLength >= bytesToReplace.Length + start)
+			{
+				ByteBlock.ReplaceUnchecked(block, bytesToReplace, start);
+				totalResplaced += bytesToReplace.Length;
+				break;
+			}
+			else if (blockLength > start)
+			{
+				ByteBlock.ReplaceUnchecked(block, bytesToReplace[..(blockLength - start)], start);
+				bytesToReplace = bytesToReplace[(blockLength - start)..];
+				totalResplaced += blockLength - start;
+				start = 0;
+			}
+			else
+			{
+				start -= blockLength;
+			}
+		}
+
+		return totalResplaced;
 	}
 
 	public byte this[int index]

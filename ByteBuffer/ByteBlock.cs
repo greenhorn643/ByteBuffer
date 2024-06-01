@@ -44,6 +44,12 @@ internal static class ByteBlock
 		return block[offsetIndex];
 	}
 
+	public static void SetByteAtUnchecked(byte[] block, int index, byte value)
+	{
+		int offsetIndex = index + GetBlockStart(block);
+		block[offsetIndex] = value;
+	}
+
 	public static byte GetByteAt(byte[] block, int index)
 	{
 		if (index < 0 || index > GetDataLength(block))
@@ -80,10 +86,16 @@ internal static class ByteBlock
 		SetBlockStart(block, blockStart + bytes.Length);
 	}
 
-	public static void Read(byte[] block, Span<byte> bytes)
+	public static void Read(byte[] block, Span<byte> bytes, int start = 0)
 	{
 		int blockStart = GetBlockStart(block);
-		block.AsSpan().Slice(blockStart, bytes.Length).CopyTo(bytes);
+		block.AsSpan().Slice(blockStart + start, bytes.Length).CopyTo(bytes);
+	}
+
+	public static void ReplaceUnchecked(byte[] block, ReadOnlySpan<byte> bytes, int start = 0)
+	{
+		int blockStart = GetBlockStart(block);
+		bytes.CopyTo(block.AsSpan().Slice(blockStart + start, bytes.Length));
 	}
 
 	public static void Reset(byte[] block)

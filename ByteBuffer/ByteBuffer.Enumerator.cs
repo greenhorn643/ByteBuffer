@@ -18,7 +18,7 @@ public partial class ByteBuffer
 		private int index = -1;
 		private IEnumerator<byte[]>? blocksEnumerator = null;
 
-		public byte Current => GetCurret();
+		public byte Current { get { return GetCurret(); } set { SetCurrent(value); } }
 
 		object IEnumerator.Current => GetCurret();
 
@@ -31,6 +31,25 @@ public partial class ByteBuffer
 				EnumeratorState.AtBackBlock => ByteBlock.GetByteAtUnchecked(target.backBlock, index),
 				EnumeratorState.Finished => throw new InvalidOperationException(),
 				_ => throw new InvalidOperationException(),
+			};
+		}
+
+		private void SetCurrent(byte b)
+		{
+			switch (state)
+			{
+				case EnumeratorState.AtFrontBlock:
+					ByteBlock.SetByteAtUnchecked(target.frontBlock!, index, b);
+					break;
+				case EnumeratorState.InBlocks:
+					ByteBlock.SetByteAtUnchecked(blocksEnumerator!.Current, index, b);
+					break;
+				case EnumeratorState.AtBackBlock:
+					ByteBlock.SetByteAtUnchecked(target.backBlock, index, b);
+					break;
+				case EnumeratorState.Finished:
+					throw new InvalidOperationException();
+				default: throw new InvalidOperationException();
 			};
 		}
 
