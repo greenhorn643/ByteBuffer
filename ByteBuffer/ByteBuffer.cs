@@ -1,6 +1,8 @@
-﻿namespace ByteBuffer;
+﻿using System.Buffers;
 
-public partial class ByteBuffer : IList<byte>
+namespace ByteBuffer;
+
+public partial class ByteBuffer : IList<byte>, IBufferWriter<byte>
 {
 	private readonly Queue<byte[]> blocks = [];
 	private byte[] backBlock = ByteBlock.NewBlock();

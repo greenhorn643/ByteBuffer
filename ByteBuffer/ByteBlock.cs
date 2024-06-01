@@ -2,11 +2,18 @@
 
 internal static class ByteBlock
 {
-	const int BLOCK_SIZE = 4096;
+	const int DEFAULT_BLOCK_SIZE = 4096;
 
 	public static byte[] NewBlock()
 	{
-		var block = new byte[BLOCK_SIZE];
+		var block = new byte[DEFAULT_BLOCK_SIZE];
+		Reset(block);
+		return block;
+	}
+
+	public static byte[] NewBlockWithMinimumCapacity(int minCapacity)
+	{
+		var block = new byte[4 + minCapacity];
 		Reset(block);
 		return block;
 	}
@@ -23,7 +30,7 @@ internal static class ByteBlock
 
 	public static int GetRemainingCapacity(byte[] block)
 	{
-		return BLOCK_SIZE - GetBlockEnd(block);
+		return block.Length - GetBlockEnd(block);
 	}
 
 	public static int GetDataLength(byte[] block)
@@ -83,5 +90,15 @@ internal static class ByteBlock
 	{
 		SetBlockStart(block, 4);
 		SetBlockEnd(block, 4);
+	}
+
+	public static Memory<byte> AsMemory(byte[] block)
+	{
+		return block.AsMemory()[GetBlockEnd(block)..];
+	}
+
+	public static Span<byte> AsSpan(byte[] block)
+	{
+		return block.AsSpan()[GetBlockEnd(block)..];
 	}
 }
