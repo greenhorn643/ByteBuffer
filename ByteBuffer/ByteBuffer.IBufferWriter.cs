@@ -6,6 +6,7 @@ public partial class ByteBuffer
 	{
 		ByteBlock.SetBlockEnd(backBlock,
 			ByteBlock.GetBlockEnd(backBlock) + count);
+		Count += count;
 	}
 
 	public Memory<byte> GetMemory(int sizeHint = 0)
