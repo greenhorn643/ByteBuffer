@@ -32,5 +32,14 @@ public partial class ByteBuffer
 
 			backBlock = ByteBlock.NewBlockWithMinimumCapacity(sizeHint);
 		}
+		else if (ByteBlock.GetRemainingCapacity(backBlock) == 0)
+		{
+			if (ByteBlock.GetDataLength(backBlock) != 0)
+			{
+				blocks.Enqueue(backBlock);
+			}
+
+			backBlock = ByteBlock.NewBlock();
+		}
 	}
 }
