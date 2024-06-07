@@ -13,19 +13,25 @@ internal static class ByteBlock
 
 	public static byte[] NewBlockWithMinimumCapacity(int minCapacity)
 	{
-		var block = new byte[4 + minCapacity];
+		var block = new byte[8 + minCapacity];
 		Reset(block);
 		return block;
 	}
 
 	public static int GetBlockStart(byte[] block)
 	{
-		return (block[0] | (block[1] << 8));
+		return block[0]
+			| (block[1] << 8)
+			| (block[2] << 16)
+			| (block[3] << 24);
 	}
 
 	public static int GetBlockEnd(byte[] block)
 	{
-		return (block[2] | (block[3] << 8));
+		return block[4]
+			| (block[5] << 8)
+			| (block[6] << 16)
+			| (block[7] << 24);
 	}
 
 	public static int GetRemainingCapacity(byte[] block)
@@ -64,12 +70,16 @@ internal static class ByteBlock
 	{
 		block[0] = (byte)blockStart;
 		block[1] = (byte)(blockStart >> 8);
+		block[2] = (byte)(blockStart >> 16);
+		block[3] = (byte)(blockStart >> 24);
 	}
 
 	public static void SetBlockEnd(byte[] block, int blockEnd)
 	{
-		block[2] = (byte)blockEnd;
-		block[3] = (byte)(blockEnd >> 8);
+		block[4] = (byte)blockEnd;
+		block[5] = (byte)(blockEnd >> 8);
+		block[6] = (byte)(blockEnd >> 16);
+		block[7] = (byte)(blockEnd >> 24);
 	}
 
 	public static void Write(byte[] block, ReadOnlySpan<byte> bytes)
@@ -100,8 +110,8 @@ internal static class ByteBlock
 
 	public static void Reset(byte[] block)
 	{
-		SetBlockStart(block, 4);
-		SetBlockEnd(block, 4);
+		SetBlockStart(block, 8);
+		SetBlockEnd(block, 8);
 	}
 
 	public static Memory<byte> AsMemory(byte[] block)
